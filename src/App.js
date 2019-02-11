@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import './App.css';
+import './App.scss';
 import Cell from './components/cell';
 import _ from 'lodash';
 
@@ -51,37 +51,54 @@ const isDirectionalKey = (code) => {
 
 
 const merge = (row, indexComputation) => {
-  console.log(indexComputation, row);
   let outputRow = [];
-  for (let j = 0; j < row.length; j++) {
-    if (row[j] === row[j+1]){
-      outputRow.push(row[j]+row[j+1]);
-      row.splice(j+1, 1);
-    }else{
-      outputRow.push(row[j]);
-    }
+  switch (indexComputation) {
+    case 'right':
+    case 'down':
+      break;
+    default:
+      row = row.reverse()
   }
+
+  for (let j = row.length -1; j >= 0; j--) {
+    if (row[j] === row[j-1]){
+      outputRow = [row[j] + row[j-1]].concat(outputRow);
+      row[j-1] = 0;
+    }else{
+      outputRow = [row[j]].concat(outputRow);
+    }
+    outputRow = _.compact(outputRow);
+  }
+
   if (outputRow.length < 4){
     const a = new Array((4 - outputRow.length)).fill(0);
     switch (indexComputation) {
       case 'left':
-        return outputRow.concat(a);
+        return outputRow.reverse().concat(a);
       case 'right':
         return a.concat(outputRow);
       case 'up':
-        return outputRow.concat(a);
+        return outputRow.reverse().concat(a);
       case 'down':
         return a.concat(outputRow);
       default:
     }
   }
-  return outputRow;
+
+  switch (indexComputation) {
+    case 'right':
+    case 'down':
+      return outputRow;
+    default:
+      return outputRow.reverse()
+  }
 };
 
 class App extends Component {
   // draw grid
   // add event listner
   // update grid on event
+  // Record game state
 
   componentDidMount(){
     window.addEventListener("keydown",(e) => {
@@ -91,6 +108,9 @@ class App extends Component {
     })
   }
 
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this.handleKeyPress);
+  }
 
   handleKeyPress = (e) => {
     switch(e.keyCode){
@@ -111,11 +131,22 @@ class App extends Component {
   };
 
   state = {
-    grid: createGridArray()
+    grid: createGridArray(),
+    game: []
   };
 
   createGrid = ()=> {
-    return this.state.grid.map((row, r) => <div key={`row-${r+1}`} className="grid-row">{
+    const { grid, game } = this.state;
+    const [lastGame] = game.reverse();
+    if(lastGame){
+      const { grid: lastGameGrid } = lastGame;
+      const { move }= lastGame;
+      console.log(lastGameGrid);
+      console.log(move);
+      console.log(grid);
+    }
+
+    return grid.map((row, r) => <div key={`row-${r+1}`} className="grid-row">{
         row.map((cell, c) => <Cell key={`${r+1}-${c+1}`} value={cell}/>)}</div>)
   };
 
@@ -156,46 +187,45 @@ class App extends Component {
     } else {
       flatGrid[ranIndex] = 4;
     }
-
     return deflatten(flatGrid);
   };
 
-
   handleHorizontal = (indexComputation) => {
     const { grid } = this.state;
-
     this.setState({ grid: this.handleMovement(grid, indexComputation)});
+    this.setState({
+      game: this.state.game.concat([{
+        grid,
+        move: indexComputation,
+      }])
+    });
   };
 
   handleVertical = (indexComputation) => {
     const { grid } = this.state;
     const newGrid = this.handleMovement(transpose(grid), indexComputation);
     this.setState({ grid: transpose(newGrid)});
+    this.setState({
+      game: this.state.game.concat([{
+        grid,
+        move: indexComputation,
+      }])
+    });
   };
 
   render() {
+    const { grid } = this.state;
     return (
         <div className="container">
           <div className="heading">
             <h1 className="title">2048</h1>
-            <div className="score-container">0</div>
+            <div className="score-container">{ _.sum(grid.flat())}</div>
           </div>
           <p className="game-intro">Join the numbers and get to the <strong>2048 tile!</strong></p>
 
           <div className="game-container">
-            <div className="game-message">
-              <p></p>
-              <div className="lower">
-                <a className="retry-button">Try again</a>
-              </div>
-            </div>
-
             <div className="grid-container">
               { this.createGrid() }
-            </div>
-
-            <div className="tile-container">
-
             </div>
           </div>
         </div>
