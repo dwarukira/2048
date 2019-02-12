@@ -39,6 +39,19 @@ h1.title {
   margin-top: 8px;
 }
 
+.undo-button {
+  position: relative;
+  float: right;
+  background: #bbada0;
+  border-radius: 3px;
+  color: white;
+  outline: none;
+}
+
+.undo-button:hover{
+  cursor: pointer;
+}
+
 .score-container:after {
   position: absolute;
   width: 100%;
@@ -258,6 +271,12 @@ hr {
 
 .game-intro {
   margin-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.game-intro > p{
+  margin: 0;
 }
 
 @media screen and (max-width: 480px) {

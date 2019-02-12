@@ -102,11 +102,22 @@ class App extends Component {
 
   componentDidMount(){
     window.addEventListener("keydown",(e) => {
+      console.log("WARU");
       if(isDirectionalKey(e.keyCode)) {
-        this.handleKeyPress(e)
+        this.handleKeyPress(e);
       }
-    })
+    });
+
+    requestAnimationFrame(this.loop);
   }
+
+  loop = () => {
+    let event = new KeyboardEvent('keydown', {keyCode: 37, bubbles: true, canBubbleArg: true, });
+    // event.initKeyboardEvent( 'keydown', true, false, null, 0, false, 0, false, 65 );
+    document.dispatchEvent( event );
+    requestAnimationFrame(this.loop);
+
+  };
 
   componentWillUnmount() {
     window.removeEventListener('keydown', this.handleKeyPress);
@@ -132,7 +143,8 @@ class App extends Component {
 
   state = {
     grid: createGridArray(),
-    game: []
+    game: [],
+    canUndo: false
   };
 
   createGrid = ()=> {
@@ -141,9 +153,9 @@ class App extends Component {
     if(lastGame){
       const { grid: lastGameGrid } = lastGame;
       const { move }= lastGame;
-      console.log(lastGameGrid);
-      console.log(move);
-      console.log(grid);
+      // console.log(lastGameGrid);
+      // console.log(move);
+      // console.log(grid);
     }
 
     return grid.map((row, r) => <div key={`row-${r+1}`} className="grid-row">{
@@ -197,7 +209,8 @@ class App extends Component {
       game: this.state.game.concat([{
         grid,
         move: indexComputation,
-      }])
+      }]),
+    canUndo: true
     });
   };
 
@@ -209,8 +222,21 @@ class App extends Component {
       game: this.state.game.concat([{
         grid,
         move: indexComputation,
-      }])
+      }]),
+    canUndo: true
     });
+  };
+
+  undo = () => {
+    if(this.state.canUndo){
+      const { grid: prevGrid } = this.state.game[0];
+      this.setState(
+        {
+          grid: prevGrid,
+          game: this.state.game.slice(1),
+          canUndo: false
+        });
+    }
   };
 
   render() {
@@ -221,7 +247,10 @@ class App extends Component {
             <h1 className="title">2048</h1>
             <div className="score-container">{ _.sum(grid.flat())}</div>
           </div>
-          <p className="game-intro">Join the numbers and get to the <strong>2048 tile!</strong></p>
+          <div className="game-intro">
+            <p >Join the numbers and get to the <strong>2048 tile!</strong></p>
+            <button type="button" onClick={this.undo} className="undo-button">Undo</button>
+          </div>
 
           <div className="game-container">
             <div className="grid-container">
